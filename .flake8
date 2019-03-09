@@ -1,0 +1,14 @@
+[flake8]
+exclude =
+    # Data
+    data/,
+    report/,
+    results/,
+
+    # Git
+    .git/,
+
+    # Python
+    .cache/,
+    .pytest_cache/,
+    __pycache__/,
