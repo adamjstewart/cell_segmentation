@@ -1,8 +1,17 @@
 {
-	"folders":
-	[
-		{
-			"path": "."
-		}
-	]
+    "folders":
+    [
+        {
+            "name": "Cell Segmentation",
+            "path": ".",
+            "folder_exclude_patterns": [
+                ".cache", ".pytest_cache", "cache", "data",
+                "__pycache__", "results",
+            ],
+            "file_include_patterns": [
+                "*.md", "*.py", "*.sublime-project", "*.tex", "*.txt",
+                ".flake8", ".gitignore", ".travis.yml",
+            ],
+        }
+    ]
 }
