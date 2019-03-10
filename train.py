@@ -39,6 +39,9 @@ def set_up_parser():
         '-d', '--depth', default=4, type=int,
         help='depth of the u-net')
     group2.add_argument(
+        '-p', '--dropout', default=0.5, type=float,
+        help='dropout probability')
+    group2.add_argument(
         '-e', '--epochs', default=1000, type=int,
         help='number of training epochs')
     group2.add_argument(
@@ -91,7 +94,7 @@ if __name__ == '__main__':
         train_dataset, args.batch_size, shuffle=True, num_workers=num_workers)
 
     # Model
-    model = UNet(depth=args.depth)
+    model = UNet(depth=args.depth, p=args.dropout)
 
     # Checkpointing
     # TODO
@@ -99,6 +102,7 @@ if __name__ == '__main__':
     # Send to the GPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
+    model.train()
 
     # Loss function
     criterion = nn.CrossEntropyLoss()
@@ -124,14 +128,8 @@ if __name__ == '__main__':
         print('\nEpoch:', epoch)
         scheduler.step()
 
-        print('\nTraining...\n')
-        model.train()
-
         # For each mini-batch...
         for batch, data, labels in enumerate(train_loader, 1):
-            if batch % 100 == 0:
-                print('Batch:', batch)
-
             # Send to the GPU
             data = data.to(device)
             labels = labels.to(device)

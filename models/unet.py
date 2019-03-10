@@ -24,7 +24,7 @@ def center_crop(img, output_size):
 
 class Contract(nn.Module):
 
-    def __init__(self, in_channels, out_channels, dropout=False):
+    def __init__(self, in_channels, out_channels, dropout=False, p=0.5):
         super(Contract, self).__init__()
         assert in_channels < out_channels
 
@@ -33,7 +33,7 @@ class Contract(nn.Module):
         self.drop = None
 
         if dropout:
-            self.drop = nn.Dropout2d()
+            self.drop = nn.Dropout2d(p=p)
 
     def forward(self, x):
         x = self.pool(x)
@@ -73,9 +73,10 @@ class UNet(nn.Module):
     Args:
         in_channels (int, optional): number of channels in input image
         depth (int, optional): number of contractions/expansions
+        p (float, optional): dropout probability
     """
 
-    def __init__(self, in_channels=1, depth=4):
+    def __init__(self, in_channels=1, depth=4, p=0.5):
         super(UNet, self).__init__()
 
         self.depth = depth
@@ -83,7 +84,7 @@ class UNet(nn.Module):
         # Contraction
         self.conv1_2 = double_conv(in_channels, 2 ** 6)
         self.contractions = nn.ModuleList([
-            Contract(2 ** d, 2 ** (d + 1), dropout=d - depth > 3)
+            Contract(2 ** d, 2 ** (d + 1), dropout=d - depth > 3, p=p)
             for d in range(6, 6 + depth)
         ])
 
@@ -92,6 +93,8 @@ class UNet(nn.Module):
             Expand(2 ** (d + 1), 2 ** d) for d in range(6 + depth, 6, -1)
         ])
         self.conv23 = nn.Conv2d(2 ** 6, 1, 1)
+
+        # SOFTMAX???
 
         # Initialize weights
         for m in self.modules():
