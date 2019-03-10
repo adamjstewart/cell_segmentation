@@ -53,6 +53,11 @@ class UNet(nn.Module):
         self.conv22 = nn.Conv2d(64, 64, 3)
         self.conv23 = nn.Conv2d(64, 1, 1)
 
+        # Initialize weights
+        for m in self.modules():
+            nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
+            nn.init.constant_(m.bias, 0)
+
     def forward(self, x):
         # Contraction
         x = self.conv1(x)
@@ -124,9 +129,6 @@ class UNet(nn.Module):
         x = self.relu(x)
 
         x = self.conv23(x)
-
-    # TODO: figure out weight initialization
-    # torch.nn.init.kaiming_normal_
 
 
 def unet23():
