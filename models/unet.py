@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-__all__ = ['UNet', 'unet23']
+__all__ = ['UNet', 'unet8', 'unet13', 'unet18', 'unet23', 'unet28', 'unet33']
 
 
 def double_conv(in_channels, out_channels):
@@ -68,22 +68,29 @@ class Expand(nn.Module):
 
 
 class UNet(nn.Module):
+    """`U-Net <https://arxiv.org/pdf/1505.04597.pdf>`_ architecture.
 
-    def __init__(self, in_channels=1):
+    Args:
+        in_channels (int, optional): number of channels in input image
+        depth (int, optional): number of contractions/expansions
+    """
+
+    def __init__(self, in_channels=1, depth=4):
         super(UNet, self).__init__()
+
+        self.depth = depth
 
         # Contraction
         self.conv1_2 = double_conv(in_channels, 2 ** 6)
-        self.conv3_4 = Contract(2 ** 6, 2 ** 7)
-        self.conv5_6 = Contract(2 ** 7, 2 ** 8)
-        self.conv7_8 = Contract(2 ** 8, 2 ** 9, dropout=True)
-        self.conv9_10 = Contract(2 ** 9, 2 ** 10, dropout=True)
+        self.contractions = nn.ModuleList([
+            Contract(2 ** d, 2 ** (d + 1), dropout=d - depth > 3)
+            for d in range(6, 6 + depth)
+        ])
 
         # Expansion
-        self.conv11_13 = Expand(2 ** 10, 2 ** 9)
-        self.conv14_16 = Expand(2 ** 9, 2 ** 8)
-        self.conv17_19 = Expand(2 ** 8, 2 ** 7)
-        self.conv20_22 = Expand(2 ** 7, 2 ** 6)
+        self.expansions = nn.ModuleList([
+            Expand(2 ** (d + 1), 2 ** d) for d in range(6 + depth, 6, -1)
+        ])
         self.conv23 = nn.Conv2d(2 ** 6, 1, 1)
 
         # Initialize weights
@@ -94,19 +101,41 @@ class UNet(nn.Module):
 
     def forward(self, x):
         # Contraction
-        out1 = self.conv1_2(x)
-        out2 = self.conv3_4(out1)
-        out3 = self.conv5_6(out2)
-        out4 = self.conv7_8(out3)
-        x = self.conv9_10(out4)
+        out = [self.conv1_2(x)]
+        for f in self.contractions:
+            out.append(f(out[-1]))
 
         # Expansion
-        x = self.conv11_13(x, out4)
-        x = self.conv14_16(x, out3)
-        x = self.conv17_19(x, out2)
-        x = self.conv20_22(x, out1)
+        i = -2
+        x = out[-1]
+        for f in self.expansions:
+            x = f(x, out[i])
+            i -= 1
+
         x = self.conv23(x)
 
+        return x
 
-def unet23():
-    return UNet()
+
+def unet8(**kwargs):
+    return UNet(depth=1, **kwargs)
+
+
+def unet13(**kwargs):
+    return UNet(depth=2, **kwargs)
+
+
+def unet18(**kwargs):
+    return UNet(depth=3, **kwargs)
+
+
+def unet23(**kwargs):
+    return UNet(depth=4, **kwargs)
+
+
+def unet28(**kwargs):
+    return UNet(depth=5, **kwargs)
+
+
+def unet33(**kwargs):
+    return UNet(depth=6, **kwargs)
