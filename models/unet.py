@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 
 
+__all__ = ['UNet', 'unet23']
+
+
 def center_crop(img, output_size):
     _, _, h, w = img.size()
     _, _, th, tw = output_size
@@ -15,7 +18,7 @@ class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
 
-        self.relu = nn.Relu()
+        self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2)
         self.drop = nn.Dropout2d()
 
@@ -55,8 +58,9 @@ class UNet(nn.Module):
 
         # Initialize weights
         for m in self.modules():
-            nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
-            nn.init.constant_(m.bias, 0)
+            if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
+                nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         # Contraction
@@ -132,4 +136,4 @@ class UNet(nn.Module):
 
 
 def unet23():
-    pass
+    return UNet()
