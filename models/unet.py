@@ -92,7 +92,7 @@ class UNet(nn.Module):
         self.expansions = nn.ModuleList([
             Expand(2 ** (d + 1), 2 ** d) for d in range(6 + depth, 6, -1)
         ])
-        self.conv23 = nn.Conv2d(2 ** 6, 1, 1)
+        self.conv23 = nn.Conv2d(2 ** 6, 2, 1)
         self.softmax = nn.Softmax2d()
 
         # Initialize weights
