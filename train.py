@@ -10,7 +10,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from torchvision.transforms import Compose
 
 from datasets import get_dataset
 from models.unet import UNet
@@ -28,7 +27,7 @@ def set_up_parser():
 
     group1 = parser.add_argument_group(title='dataset')
     group1.add_argument(
-        '-d', '--dataset', default='ssTEM', choices=['ssTEM', 'SLAM'],
+        '--dataset', default='ssTEM', choices=['ssTEM', 'SLAM'],
         help='dataset to train on')
     group1.add_argument(
         '-r', '--root', default='data',
@@ -80,7 +79,9 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
 
     # Data augmentation
-    transform = Compose([
+    transform = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
         transforms.ToTensor()
     ])
     target_transform = None
@@ -105,6 +106,7 @@ if __name__ == '__main__':
     model.train()
 
     # Loss function
+    # TODO: need to write custom CEL that allows weight map per image
     criterion = nn.CrossEntropyLoss()
 
     # Optimizer
