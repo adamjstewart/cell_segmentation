@@ -4,6 +4,7 @@
 
 import argparse
 import multiprocessing
+import os
 
 import torch
 import torch.nn as nn
@@ -60,6 +61,9 @@ def set_up_parser():
 
     group3 = parser.add_argument_group(title='utility flags')
     group3.add_argument(
+        '-c', '--checkpoint', action='store_true',
+        help='load existing checkpoint if it exists')
+    group3.add_argument(
         '--seed', default=1, type=int,
         help='seed for random number generation')
     group3.add_argument(
@@ -97,16 +101,7 @@ if __name__ == '__main__':
     # Model
     model = UNet(depth=args.depth, p=args.dropout)
 
-    # Checkpointing
-    # TODO
-
-    # Send to the GPU
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.to(device)
-    model.train()
-
-    # Loss function
-    # TODO: need to write custom CEL that allows weight map per image
+    # Loss criterion
     criterion = nn.CrossEntropyLoss()
 
     # Optimizer
@@ -125,8 +120,23 @@ if __name__ == '__main__':
     # Scheduler
     scheduler = optim.lr_scheduler.StepLR(optimizer, args.step_size)
 
+    # Checkpointing
+    epoch = 1
+    checkpoint_file = os.path.join('checkpoints', 'model.pth')
+    if args.checkpoint and os.path.exists(checkpoint_file):
+        checkpoint = torch.load(checkpoint_file)
+        model.load_state_dict(checkpoint['model'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        scheduler.load_state_dict(checkpoint['scheduler'])
+        epoch = checkpoint['epoch']
+
+    # Send to the GPU
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
+    model.train()
+
     # For each epoch...
-    for epoch in range(1, args.epochs + 1):
+    while epoch < args.epochs:
         print('\nEpoch:', epoch)
         scheduler.step()
 
@@ -150,3 +160,13 @@ if __name__ == '__main__':
 
             # Update parameters
             optimizer.step()
+
+        epoch += 1
+
+        # Checkpointing
+        torch.save({
+            'model': model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+            'scheduler': scheduler.state_dict(),
+            'epoch': epoch,
+        }, checkpoint_file)
