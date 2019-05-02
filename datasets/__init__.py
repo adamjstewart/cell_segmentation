@@ -1,7 +1,7 @@
 import os
 
 from .sstem import ssTEM
-# from .slam import SLAM
+from .slam import SLAM
 
 
 def get_dataset(dataset, root, train=True,
@@ -24,8 +24,8 @@ def get_dataset(dataset, root, train=True,
     if dataset == 'ssTEM':
         return ssTEM(os.path.join(root, dataset), train,
                      transform, target_transform, download=True)
-    # elif dataset == 'SLAM':
-    #     return SLAM(os.path.join(root, dataset), train,
-    #                 transform, target_transform, download=True)
+    elif dataset == 'SLAM':
+        return SLAM(os.path.join(root, dataset),
+                    transform, target_transform)
     else:
         raise ValueError("Unsupported dataset: '{}'".format(dataset))
