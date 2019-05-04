@@ -4,8 +4,7 @@ from .sstem import ssTEM
 from .slam import SLAM
 
 
-def get_dataset(dataset, root, train=True,
-                transform=None, target_transform=None):
+def get_dataset(dataset, root, train=True, transform=None):
     """Loads the requested dataset.
 
     Parameters:
@@ -14,18 +13,15 @@ def get_dataset(dataset, root, train=True,
         train (bool, optional): If True, creates dataset from training set,
             otherwise creates from test set.
         transform (callable, optional): A function/transform that takes in a
-            PIL image and returns a transformed version.
-        target_transform (callable, optional): A function/transform that takes
-            in the target and transforms it.
+            numpy array and returns a transformed version.
 
     Returns:
         torch.utils.data.Dataset: the requested dataset
     """
     if dataset == 'ssTEM':
         return ssTEM(os.path.join(root, dataset), train,
-                     transform, target_transform, download=True)
+                     transform, download=True)
     elif dataset == 'SLAM':
-        return SLAM(os.path.join(root, dataset),
-                    transform, target_transform)
+        return SLAM(os.path.join(root, dataset), transform)
     else:
         raise ValueError("Unsupported dataset: '{}'".format(dataset))

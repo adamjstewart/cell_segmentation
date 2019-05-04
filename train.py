@@ -10,10 +10,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 from datasets import get_dataset
 from models.unet import UNet
+from transforms import transforms
 
 
 def set_up_parser():
@@ -86,15 +86,18 @@ if __name__ == '__main__':
     transform = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
-        transforms.ToTensor()
+        transforms.Pad(92, padding_mode='reflect'),
+        transforms.RandomCrop(572, 388),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[118.9064605468, 5.58606197916, 8.82765065104, 101.04520195],
+            std=[65.0233221789, 7.73024044040, 8.4314033739, 47.8530152470]),
     ])
-    target_transform = None
 
     # Data loaders
     num_workers = min(args.batch_size, multiprocessing.cpu_count())
     train_dataset = get_dataset(
-        args.dataset, args.root, train=True,
-        transform=transform, target_transform=target_transform)
+        args.dataset, args.root, train=True, transform=transform)
     train_loader = DataLoader(
         train_dataset, args.batch_size, shuffle=True, num_workers=num_workers)
 

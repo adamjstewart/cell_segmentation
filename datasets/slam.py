@@ -14,16 +14,12 @@ class SLAM(data.Dataset):
 
     Args:
         root (string): Root directory where dataset exists.
-        transform (callable, optional): A function/transform that takes in a
-            numpy array and returns a transformed version.
-        target_transform (callable, optional): A function/transform that takes
-            in the target and transforms it.
+        transform (callable, optional): A function/transform that takes in two
+            numpy arrays and returns transformed versions.
     """
-    def __init__(self, root, transform=None, target_transform=None,
-                 download=False):
+    def __init__(self, root, transform=None):
         self.root = os.path.expanduser(root)
         self.transform = transform
-        self.target_transform = target_transform
 
         self.data = []
         self.labels = []
@@ -49,14 +45,10 @@ class SLAM(data.Dataset):
             tuple: (image, target) where target is index of the target class.
         """
         img = self.data[index]
-
-        if self.transform is not None:
-            img = self.transform(img)
-
         target = self.labels[index]
 
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        if self.transform is not None:
+            img, target = self.transform(img, target)
 
         return img, target
 

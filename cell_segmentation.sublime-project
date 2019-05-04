@@ -6,7 +6,7 @@
             "path": ".",
             "folder_exclude_patterns": [
                 ".cache", ".pytest_cache", "cache", "data",
-                "__pycache__", "results",
+                "__pycache__", "results", "checkpoints",
             ],
             "file_include_patterns": [
                 "*.md", "*.py", "*.sublime-project", "*.tex", "*.txt",
