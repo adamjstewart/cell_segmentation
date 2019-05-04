@@ -1,9 +1,7 @@
-from __future__ import print_function
-
 import os
 
 import numpy as np
-from skimage import io
+from skimage import color, io
 import torch.utils.data as data
 
 
@@ -25,11 +23,14 @@ class SLAM(data.Dataset):
         self.labels = []
 
         for filename in os.listdir(os.path.join(self.root, 'Segmented')):
-            self.labels.append(io.imread(os.path.join(
-                self.root, 'Segmented', filename)))
+            # Load labels, convert to grayscale, and binarize
+            labels = io.imread(os.path.join(self.root, 'Segmented', filename))
+            labels = color.rgb2gray(labels)
+            labels = (labels < 1).astype(np.uint8)
+            self.labels.append(labels)
 
+            # Load data and stack to 4-channel image
             raw = filename.replace('_Segmented.png', '.tif')
-
             data = []
             for channel in ['THG', '3PF', 'SHG', '2PF']:
                 data.append(io.imread(os.path.join(
