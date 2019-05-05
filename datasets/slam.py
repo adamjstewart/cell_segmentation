@@ -47,7 +47,7 @@ class SLAM(data.Dataset):
             self.data.append(np.dstack(data))
 
         self.data = np.array(self.data, dtype=np.float32)
-        self.labels = np.array(self.labels, dtype=np.uint8)
+        self.labels = np.array(self.labels, dtype=np.int64)
 
     def __getitem__(self, index):
         """

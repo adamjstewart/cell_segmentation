@@ -168,7 +168,7 @@ class RandomRotation(torchvision.transforms.RandomRotation):
 
         # Cast back to original dtypes
         img = img.astype(np.float32)
-        target = target.round().astype(np.uint8)
+        target = target.round().astype(np.int64)
 
         return img, target
 
@@ -187,7 +187,7 @@ class RandomElasticDeformation:
         img, target = stack[..., :4], stack[..., -1]
 
         # Cast target back to original dtype
-        target = target.round().astype(np.uint8)
+        target = target.round().astype(np.int64)
 
         return img, target
 
