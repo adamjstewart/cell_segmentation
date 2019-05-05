@@ -1,7 +1,9 @@
 from collections.abc import Sequence
 import random
 
+import cv2
 import numpy as np
+from scipy.ndimage import map_coordinates, gaussian_filter
 import skimage.transform
 import torch
 import torchvision
@@ -163,3 +165,68 @@ class RandomRotation(torchvision.transforms.RandomRotation):
             skimage.transform.rotate(img, angle, mode='reflect'),
             skimage.transform.rotate(target, angle, mode='reflect')
         )
+
+
+class RandomElasticDeformation:
+
+    def __init__(self, alpha, sigma, alpha_affine):
+        self.alpha = alpha
+        self.sigma = sigma
+        self.alpha_affine = alpha_affine
+
+    def __call__(self, img, target):
+        stack = np.dstack([img, target])
+
+        # Transform img and target at the same time to ensure same deformation
+        stack = self.elastic_transform(stack)
+
+        return stack[..., :4], stack[..., -1]
+
+    def elastic_transform(self, image, random_state=None):
+        """Elastic deformation of images as described in [Simard2003]_.
+
+        .. [Simard2003] Simard, Steinkraus and Platt, "Best Practices for
+           Convolutional Neural Networks applied to Visual Document Analysis",
+           in Proc. of the International Conference on Document Analysis and
+           Recognition, 2003.
+
+        Based on:
+            https://www.kaggle.com/bguberfain/
+                elastic-transform-for-data-augmentation
+        """
+        if random_state is None:
+            random_state = np.random.RandomState(None)
+
+        shape = image.shape
+        shape_size = shape[:2]
+
+        # Random affine
+        center_square = np.float32(shape_size) // 2
+        square_size = min(shape_size) // 3
+        pts1 = np.float32([
+            center_square + square_size,
+            [center_square[0] + square_size, center_square[1] - square_size],
+            center_square - square_size
+        ])
+        pts2 = pts1 + random_state.uniform(
+            -self.alpha_affine, self.alpha_affine, size=pts1.shape
+        ).astype(np.float32)
+        M = cv2.getAffineTransform(pts1, pts2)
+        image = cv2.warpAffine(
+            image, M, shape_size[::-1], borderMode=cv2.BORDER_REFLECT_101)
+
+        dx = gaussian_filter(
+            (random_state.rand(*shape) * 2 - 1), self.sigma) * self.alpha
+        dy = gaussian_filter(
+            (random_state.rand(*shape) * 2 - 1), self.sigma) * self.alpha
+
+        x, y, z = np.meshgrid(
+            np.arange(shape[1]), np.arange(shape[0]), np.arange(shape[2]))
+        indices = (
+            np.reshape(y + dy, (-1, 1)),
+            np.reshape(x + dx, (-1, 1)),
+            np.reshape(z, (-1, 1))
+        )
+
+        return map_coordinates(
+            image, indices, order=1, mode='reflect').reshape(shape)

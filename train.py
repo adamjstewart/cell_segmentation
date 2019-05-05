@@ -85,6 +85,8 @@ if __name__ == '__main__':
     transform = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
+        transforms.RandomElasticDeformation(
+            alpha=400, sigma=10, alpha_affine=50),
         transforms.Pad(92, padding_mode='reflect'),
         transforms.RandomRotation(180),
         transforms.RandomCrop(572, 388),
