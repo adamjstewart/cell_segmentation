@@ -34,7 +34,7 @@ class SLAM(data.Dataset):
             # Load labels, convert to grayscale, and binarize
             labels = io.imread(os.path.join(seg_dir, filename))
             labels = color.rgb2gray(labels)
-            labels = (labels < 1).astype(np.uint8)
+            labels = (labels < 1)
             self.labels.append(labels)
 
             # Load data and stack to 4-channel image
@@ -46,8 +46,8 @@ class SLAM(data.Dataset):
 
             self.data.append(np.dstack(data))
 
-        self.data = np.array(self.data)
-        self.labels = np.array(self.labels)
+        self.data = np.array(self.data, dtype=np.float32)
+        self.labels = np.array(self.labels, dtype=np.uint8)
 
     def __getitem__(self, index):
         """

@@ -4,13 +4,23 @@ import os.path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 from datasets.slam import SLAM, CHANNELS
 from transforms import transforms
 
 
 def plot_data_target(data, target, transform, savefig=False):
-    print(transform)
+    print('\nTransform:', transform)
+
+    if isinstance(data, np.ndarray):
+        print('Data:', data.dtype, np.amin(data), np.amax(data))
+        print('Target:', target.dtype, np.amin(target), np.amax(target))
+    else:
+        print('Data:', data.dtype,
+              torch.min(data).item(), torch.max(data).item())
+        print('Target:', target.dtype,
+              torch.min(target).item(), torch.max(target).item())
 
     fig, axes = plt.subplots(2, 2)
 

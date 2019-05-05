@@ -28,10 +28,11 @@ class ToTensor(torchvision.transforms.ToTensor):
         Returns:
             Tensor: Converted image.
         """
-        return (
-            torchvision.transforms.functional.to_tensor(img),
-            torch.from_numpy(target)
-        )
+        # Need to swap channel axis for img
+        img = torchvision.transforms.functional.to_tensor(img)
+        target = torch.from_numpy(target)
+
+        return img, target
 
 
 class Normalize(torchvision.transforms.Normalize):
@@ -46,11 +47,10 @@ class Normalize(torchvision.transforms.Normalize):
             tuple: Normalized Tensor image and target
         """
         # Only normalize img, not target
-        return (
-            torchvision.transforms.functional.normalize(
-                img, self.mean, self.std),
-            target
-        )
+        img = torchvision.transforms.functional.normalize(
+            img, self.mean, self.std)
+
+        return img, target
 
 
 class Pad(torchvision.transforms.Pad):
@@ -75,11 +75,11 @@ class Pad(torchvision.transforms.Pad):
             pad_bottom = self.padding[3]
 
         # Only pad img, not target
-        return (
-            np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)),
-                   self.padding_mode),
-            target
-        )
+        img = np.pad(
+            img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)),
+            self.padding_mode)
+
+        return img, target
 
 
 class RandomCrop(torchvision.transforms.RandomCrop):
@@ -161,10 +161,16 @@ class RandomRotation(torchvision.transforms.RandomRotation):
         """
         angle = self.get_params(self.degrees)
 
-        return (
-            skimage.transform.rotate(img, angle, mode='reflect'),
-            skimage.transform.rotate(target, angle, mode='reflect')
-        )
+        img = skimage.transform.rotate(
+            img, angle, mode='reflect', preserve_range=True)
+        target = skimage.transform.rotate(
+            target, angle, mode='reflect', preserve_range=True)
+
+        # Cast back to original dtypes
+        img = img.astype(np.float32)
+        target = target.round().astype(np.uint8)
+
+        return img, target
 
 
 class RandomElasticDeformation:
@@ -175,12 +181,15 @@ class RandomElasticDeformation:
         self.alpha_affine = alpha_affine
 
     def __call__(self, img, target):
-        stack = np.dstack([img, target])
-
         # Transform img and target at the same time to ensure same deformation
+        stack = np.dstack([img, target])
         stack = self.elastic_transform(stack)
+        img, target = stack[..., :4], stack[..., -1]
 
-        return stack[..., :4], stack[..., -1]
+        # Cast target back to original dtype
+        target = target.round().astype(np.uint8)
+
+        return img, target
 
     def elastic_transform(self, image, random_state=None):
         """Elastic deformation of images as described in [Simard2003]_.
