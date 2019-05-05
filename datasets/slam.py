@@ -5,6 +5,9 @@ from skimage import color, io
 import torch.utils.data as data
 
 
+CHANNELS = ['THG', '3PF', 'SHG', '2PF']
+
+
 class SLAM(data.Dataset):
     """Dataset for `SLAM: Simultaneous Label-free
     Autofluorescence-Multiharmonic microscopy
@@ -32,7 +35,7 @@ class SLAM(data.Dataset):
             # Load data and stack to 4-channel image
             raw = filename.replace('_Segmented.png', '.tif')
             data = []
-            for channel in ['THG', '3PF', 'SHG', '2PF']:
+            for channel in CHANNELS:
                 data.append(io.imread(os.path.join(
                     self.root, 'Macrophage4channels', channel, raw)))
 

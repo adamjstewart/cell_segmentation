@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 import skimage.transform
+import torch
 import torchvision
 
 
@@ -27,7 +28,7 @@ class ToTensor(torchvision.transforms.ToTensor):
         """
         return (
             torchvision.transforms.functional.to_tensor(img),
-            torchvision.transforms.functional.to_tensor(target)
+            torch.from_numpy(target)
         )
 
 
@@ -45,7 +46,7 @@ class Normalize(torchvision.transforms.Normalize):
         # Only normalize img, not target
         return (
             torchvision.transforms.functional.normalize(
-                img, self.mean, self.std, self.inplace),
+                img, self.mean, self.std),
             target
         )
 
@@ -74,7 +75,7 @@ class Pad(torchvision.transforms.Pad):
         # Only pad img, not target
         return (
             np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)),
-                   self.padding_mode, constant_values=self.fill),
+                   self.padding_mode),
             target
         )
 
@@ -94,8 +95,7 @@ class RandomCrop(torchvision.transforms.RandomCrop):
             tuple: Cropped image and target.
         """
         ih, iw, _ = img.shape
-        th, tw, _ = target.shape
-        oh, ow = (ih - th) // 2, (iw - tw) // 2
+        th, tw = target.shape
 
         i = random.randint(0, ih - self.img_size)
         j = random.randint(0, iw - self.img_size)
@@ -103,11 +103,14 @@ class RandomCrop(torchvision.transforms.RandomCrop):
         img = img[i:i + self.img_size, j:j + self.img_size]
 
         # Crop target to corresponding area
-        i -= oh
-        j -= ow
         target = target[i:i + self.target_size, j:j + self.target_size]
 
         return img, target
+
+    def __repr__(self):
+        return self.__class__.__name__ + \
+            '(img_size={0}, target_size={1})'.format(
+                self.img_size, self.target_size)
 
 
 class RandomHorizontalFlip(torchvision.transforms.RandomHorizontalFlip):
