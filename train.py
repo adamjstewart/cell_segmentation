@@ -77,7 +77,6 @@ if __name__ == '__main__':
     # Parse supplied arguments
     parser = set_up_parser()
     args = parser.parse_args()
-    print('\nHyperparameters:', args)
 
     # Set random seed for reproducibility
     torch.manual_seed(args.seed)
@@ -87,6 +86,7 @@ if __name__ == '__main__':
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.Pad(92, padding_mode='reflect'),
+        transforms.RandomRotation(180),
         transforms.RandomCrop(572, 388),
         transforms.ToTensor(),
         transforms.Normalize(

@@ -2,6 +2,7 @@ from collections.abc import Sequence
 import random
 
 import numpy as np
+import skimage.transform
 import torchvision
 
 
@@ -141,3 +142,21 @@ class RandomVerticalFlip(torchvision.transforms.RandomVerticalFlip):
             img, target = np.flipud(img), np.flipud(target)
 
         return img, target
+
+
+class RandomRotation(torchvision.transforms.RandomRotation):
+
+    def __call__(self, img, target):
+        """
+        Args:
+            img (numpy.ndarray): Image to be rotated.
+            target (numpy.ndarray): Target to be rotated.
+        Returns:
+            tuple: Rotated image and target.
+        """
+        angle = self.get_params(self.degrees)
+
+        return (
+            skimage.transform.rotate(img, angle, mode='reflect'),
+            skimage.transform.rotate(target, angle, mode='reflect')
+        )
