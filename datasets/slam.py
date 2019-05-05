@@ -25,7 +25,8 @@ class SLAM(data.Dataset):
         self.data = []
         self.labels = []
 
-        for filename in os.listdir(os.path.join(self.root, 'Segmented')):
+        for filename in sorted(os.listdir(
+                os.path.join(self.root, 'Segmented'))):
             # Load labels, convert to grayscale, and binarize
             labels = io.imread(os.path.join(self.root, 'Segmented', filename))
             labels = color.rgb2gray(labels)
@@ -40,6 +41,9 @@ class SLAM(data.Dataset):
                     self.root, 'Macrophage4channels', channel, raw)))
 
             self.data.append(np.dstack(data))
+
+        self.data = np.array(self.data)
+        self.labels = np.array(self.labels)
 
     def __getitem__(self, index):
         """
