@@ -93,7 +93,7 @@ class UNet(nn.Module):
 
         # Expansion
         self.expansions = nn.ModuleList([
-            Expand(2 ** (d + 1), 2 ** d) for d in range(
+            Expand(2 ** d, 2 ** (d - 1)) for d in range(
                 start_channels + depth, start_channels, -1)
         ])
         self.conv23 = nn.Conv2d(2 ** start_channels, out_channels, 1)
