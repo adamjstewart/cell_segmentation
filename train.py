@@ -82,7 +82,7 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
 
     # Data augmentation
-    transform = transforms.Compose([
+    train_transform = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.RandomElasticDeformation(
@@ -92,16 +92,28 @@ if __name__ == '__main__':
         transforms.RandomCrop(572, 388),
         transforms.ToTensor(),
         transforms.Normalize(
-            mean=[118.9064605468, 5.58606197916, 8.82765065104, 101.04520195],
-            std=[65.0233221789, 7.73024044040, 8.4314033739, 47.8530152470]),
+            mean=[106.224838055, 5.2348620833, 7.62163486111, 86.974367638],
+            std=[59.419128849, 7.1664727925, 7.462212191, 43.3211457393]),
+    ])
+    test_transform = transforms.Compose([
+        transforms.Pad(92, padding_mode='reflect'),
+        transforms.RandomCrop(572, 388),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[106.224838055, 5.2348620833, 7.62163486111, 86.974367638],
+            std=[59.419128849, 7.1664727925, 7.462212191, 43.3211457393]),
     ])
 
     # Data loaders
     num_workers = min(args.batch_size, multiprocessing.cpu_count())
     train_dataset = get_dataset(
-        args.dataset, args.root, train=True, transform=transform)
+        args.dataset, args.root, train=True, transform=train_transform)
+    test_dataset = get_dataset(
+        args.dataset, args.root, train=False, transform=test_transform)
     train_loader = DataLoader(
         train_dataset, args.batch_size, shuffle=True, num_workers=num_workers)
+    test_loader = DataLoader(
+        test_dataset, args.batch_size, shuffle=True, num_workers=num_workers)
 
     # Model
     model = UNet(depth=args.depth, p=args.dropout)
@@ -138,15 +150,15 @@ if __name__ == '__main__':
     # Send to the GPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
-    model.train()
 
     # For each epoch...
     while epoch < args.epochs:
         print('\nEpoch:', epoch)
+        model.train()
         scheduler.step()
 
         # For each mini-batch...
-        for batch, data, labels in enumerate(train_loader, 1):
+        for data, labels in train_loader:
             # Send to the GPU
             data = data.to(device)
             labels = labels.to(device)
@@ -168,10 +180,11 @@ if __name__ == '__main__':
 
         epoch += 1
 
-        # Checkpointing
-        torch.save({
-            'model': model.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'scheduler': scheduler.state_dict(),
-            'epoch': epoch,
-        }, checkpoint_file)
+        if epoch % 10 == 0:
+            # Checkpointing
+            torch.save({
+                'model': model.state_dict(),
+                'optimizer': optimizer.state_dict(),
+                'scheduler': scheduler.state_dict(),
+                'epoch': epoch,
+            }, checkpoint_file)

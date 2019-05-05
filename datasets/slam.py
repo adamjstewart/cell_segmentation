@@ -15,20 +15,24 @@ class SLAM(data.Dataset):
 
     Args:
         root (string): Root directory where dataset exists.
+        train (bool, optional): If True, creates dataset from training set,
+            otherwise creates from test set.
         transform (callable, optional): A function/transform that takes in two
             numpy arrays and returns transformed versions.
     """
-    def __init__(self, root, transform=None):
+    def __init__(self, root, train=True, transform=None):
         self.root = os.path.expanduser(root)
+        self.train = train
         self.transform = transform
 
         self.data = []
         self.labels = []
 
-        for filename in sorted(os.listdir(
-                os.path.join(self.root, 'Segmented'))):
+        train_test = 'train' if train else 'test'
+        seg_dir = os.path.join(self.root, 'Segmented', train_test)
+        for filename in sorted(os.listdir(seg_dir)):
             # Load labels, convert to grayscale, and binarize
-            labels = io.imread(os.path.join(self.root, 'Segmented', filename))
+            labels = io.imread(os.path.join(seg_dir, filename))
             labels = color.rgb2gray(labels)
             labels = (labels < 1).astype(np.uint8)
             self.labels.append(labels)

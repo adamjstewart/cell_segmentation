@@ -6,7 +6,7 @@ import os
 from datasets.slam import SLAM
 
 
-dataset = SLAM(os.path.join('data', 'SLAM'))
+dataset = SLAM(os.path.join('data', 'SLAM'), train=True)
 
 running_mean = np.zeros(4)
 running_std = np.zeros(4)
