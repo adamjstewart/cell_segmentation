@@ -28,7 +28,7 @@ def set_up_parser():
 
     group1 = parser.add_argument_group(title='dataset')
     group1.add_argument(
-        '--dataset', default='ssTEM', choices=['ssTEM', 'SLAM'],
+        '--dataset', default='SLAM', choices=['ssTEM', 'SLAM'],
         help='dataset to train on')
     group1.add_argument(
         '-r', '--root', default='data',
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         test_dataset, args.batch_size, shuffle=True, num_workers=num_workers)
 
     # Model
-    model = UNet(depth=args.depth, p=args.dropout)
+    model = UNet(in_channels=4, depth=args.depth, p=args.dropout)
 
     # Loss criterion
     criterion = nn.CrossEntropyLoss()
