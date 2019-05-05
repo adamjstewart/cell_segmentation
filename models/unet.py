@@ -51,7 +51,7 @@ class Expand(nn.Module):
         super(Expand, self).__init__()
         assert in_channels > out_channels
 
-        self.upconv = nn.ConvTranspose2d(in_channels, out_channels, 2)
+        self.upconv = nn.ConvTranspose2d(in_channels, out_channels, 2, 2)
         self.relu = nn.ReLU()
         self.conv = double_conv(in_channels, out_channels)
 
