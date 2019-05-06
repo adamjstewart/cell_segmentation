@@ -6,6 +6,7 @@ import argparse
 import multiprocessing
 import os
 
+from sklearn import metrics
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -139,6 +140,9 @@ if __name__ == '__main__':
 
     # Checkpointing
     epoch = 1
+    train_loss = []
+    train_iou = []
+    test_iou = []
     checkpoint_file = os.path.join('checkpoints', 'model.pth')
     if args.checkpoint and os.path.exists(checkpoint_file):
         checkpoint = torch.load(checkpoint_file)
@@ -146,14 +150,21 @@ if __name__ == '__main__':
         optimizer.load_state_dict(checkpoint['optimizer'])
         scheduler.load_state_dict(checkpoint['scheduler'])
         epoch = checkpoint['epoch']
+        train_loss = checkpoint['train_loss']
+        train_iou = checkpoint['train_iou']
+        test_iou = checkpoint['test_iou']
 
     # Send to the GPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
 
     # For each epoch...
+    running_loss = 0
+    running_train_iou = 0
     while epoch < args.epochs:
         print('\nEpoch:', epoch)
+
+        # Training
         model.train()
         scheduler.step()
 
@@ -168,9 +179,13 @@ if __name__ == '__main__':
 
             # Forward pass
             outputs = model(data)
+            predictions = torch.argmax(outputs, 1)
+            running_train_iou += metrics.jaccard_similarity_score(
+                labels.numpy().flatten(), predictions.numpy().flatten())
 
             # Calculate loss
             loss = criterion(outputs, labels)
+            running_loss += loss.item()
 
             # Calculate gradients
             loss.backward()
@@ -178,13 +193,45 @@ if __name__ == '__main__':
             # Update parameters
             optimizer.step()
 
-        epoch += 1
-
         if epoch % 10 == 0:
+            train_loss.append(running_loss / 10 / len(train_loader))
+            train_iou.append(running_train_iou / 10 / len(train_loader))
+
+            running_loss = 0
+            running_train_iou = 0
+
+            print('Loss: {:.3f}'.format(train_loss[-1]))
+            print('Train IoU: {:.3f}'.format(train_iou[-1]))
+
+            # Testing
+            model.eval()
+            running_test_iou = 0
+            with torch.no_grad():
+                for data, labels in test_loader:
+                    # Send to the GPU
+                    data = data.to(device)
+                    labels = labels.to(device)
+
+                    # Forward pass
+                    outputs = model(data)
+                    predictions = torch.argmax(outputs, 1)
+                    running_test_iou += metrics.jaccard_similarity_score(
+                        labels.numpy().flatten(),
+                        predictions.numpy().flatten())
+
+            test_iou.append(running_test_iou / len(test_loader))
+
+            print('Test IoU: {:.3f}'.format(test_iou[-1]))
+
             # Checkpointing
             torch.save({
                 'model': model.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'scheduler': scheduler.state_dict(),
                 'epoch': epoch,
+                'train_loss': train_loss,
+                'train_iou': train_iou,
+                'test_iou': test_iou,
             }, checkpoint_file)
+
+        epoch += 1
