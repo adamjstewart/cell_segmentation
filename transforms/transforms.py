@@ -53,6 +53,17 @@ class Normalize(torchvision.transforms.Normalize):
         return img, target
 
 
+class MinMaxScaling:
+
+    def __call__(self, img, target):
+        mins = np.amin(img, axis=(0, 1))
+        maxs = np.amax(img, axis=(0, 1))
+
+        img = (img - mins) / (maxs - mins)
+
+        return img, target
+
+
 class Pad(torchvision.transforms.Pad):
 
     def __call__(self, img, target):
@@ -184,7 +195,7 @@ class RandomElasticDeformation:
         # Transform img and target at the same time to ensure same deformation
         stack = np.dstack([img, target])
         stack = self.elastic_transform(stack)
-        img, target = stack[..., :4], stack[..., -1]
+        img, target = stack[..., :-1], stack[..., -1]
 
         # Cast target back to original dtype
         target = target.round().astype(np.int64)
