@@ -193,7 +193,9 @@ if __name__ == '__main__':
             # Update parameters
             optimizer.step()
 
-        if epoch % 10 == 0:
+        epoch += 1
+
+        if epoch % 10 == 1:
             train_loss.append(running_loss / 10 / len(train_loader))
             train_iou.append(running_train_iou / 10 / len(train_loader))
 
@@ -233,5 +235,3 @@ if __name__ == '__main__':
                 'train_iou': train_iou,
                 'test_iou': test_iou,
             }, checkpoint_file)
-
-        epoch += 1
