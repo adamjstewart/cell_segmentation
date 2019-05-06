@@ -181,7 +181,8 @@ if __name__ == '__main__':
             outputs = model(data)
             predictions = torch.argmax(outputs, 1)
             running_train_iou += metrics.jaccard_similarity_score(
-                labels.numpy().flatten(), predictions.numpy().flatten())
+                labels.cpu().numpy().flatten(),
+                predictions.cpu().numpy().flatten())
 
             # Calculate loss
             loss = criterion(outputs, labels)
@@ -218,8 +219,8 @@ if __name__ == '__main__':
                     outputs = model(data)
                     predictions = torch.argmax(outputs, 1)
                     running_test_iou += metrics.jaccard_similarity_score(
-                        labels.numpy().flatten(),
-                        predictions.numpy().flatten())
+                        labels.cpu().numpy().flatten(),
+                        predictions.cpu().numpy().flatten())
 
             test_iou.append(running_test_iou / len(test_loader))
 
