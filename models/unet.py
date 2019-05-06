@@ -85,7 +85,7 @@ class UNet(nn.Module):
         self.depth = depth
 
         # Contraction
-        self.conv1_2 = double_conv(in_channels, 2 ** start_channels)
+        self.conv1 = double_conv(in_channels, 2 ** start_channels)
         self.contractions = nn.ModuleList([
             Contract(2 ** d, 2 ** (d + 1), dropout=d - depth > 3, p=p)
             for d in range(start_channels, start_channels + depth)
@@ -96,7 +96,7 @@ class UNet(nn.Module):
             Expand(2 ** d, 2 ** (d - 1)) for d in range(
                 start_channels + depth, start_channels, -1)
         ])
-        self.conv23 = nn.Conv2d(2 ** start_channels, out_channels, 1)
+        self.conv2 = nn.Conv2d(2 ** start_channels, out_channels, 1)
         self.softmax = nn.Softmax2d()
 
         # Initialize weights
@@ -107,7 +107,7 @@ class UNet(nn.Module):
 
     def forward(self, x):
         # Contraction
-        out = [self.conv1_2(x)]
+        out = [self.conv1(x)]
         for f in self.contractions:
             out.append(f(out[-1]))
 
@@ -118,7 +118,7 @@ class UNet(nn.Module):
             x = f(x, out[i])
             i -= 1
 
-        x = self.conv23(x)
+        x = self.conv2(x)
         x = self.softmax(x)
 
         return x
