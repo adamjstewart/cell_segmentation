@@ -250,3 +250,10 @@ class RandomElasticDeformation:
 
         return map_coordinates(
             image, indices, order=1, mode='reflect').reshape(shape)
+
+
+class Original:
+    """Identity mapping for plotting purposes."""
+
+    def __call__(self, img, target):
+        return img, target
