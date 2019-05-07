@@ -97,7 +97,7 @@ class UNet(nn.Module):
                 start_channels + depth, start_channels, -1)
         ])
         self.conv2 = nn.Conv2d(2 ** start_channels, out_channels, 1)
-        self.softmax = nn.Softmax2d()
+        self.softmax = nn.LogSoftmax(dim=1)
 
         # Initialize weights
         for m in self.modules():
