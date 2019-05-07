@@ -6,6 +6,8 @@ import argparse
 import multiprocessing
 import os
 
+import numpy as np
+import scipy.misc
 from sklearn import metrics
 import torch
 import torch.nn as nn
@@ -78,6 +80,7 @@ if __name__ == '__main__':
     # Parse supplied arguments
     parser = set_up_parser()
     args = parser.parse_args()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set random seed for reproducibility
     torch.manual_seed(args.seed)
@@ -86,23 +89,19 @@ if __name__ == '__main__':
     train_transform = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
+        transforms.MinMaxScaling(),
         transforms.RandomElasticDeformation(
-            alpha=400, sigma=10, alpha_affine=50),
+            alpha=200, sigma=10, alpha_affine=40),
         transforms.Pad(92, padding_mode='reflect'),
         transforms.RandomRotation(180),
         transforms.RandomCrop(572, 388),
         transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[106.224838055, 5.2348620833, 7.62163486111, 86.974367638],
-            std=[59.419128849, 7.1664727925, 7.462212191, 43.3211457393]),
     ])
     test_transform = transforms.Compose([
+        transforms.MinMaxScaling(),
         transforms.Pad(92, padding_mode='reflect'),
         transforms.RandomCrop(572, 388),
         transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[106.224838055, 5.2348620833, 7.62163486111, 86.974367638],
-            std=[59.419128849, 7.1664727925, 7.462212191, 43.3211457393]),
     ])
 
     # Data loaders
@@ -120,7 +119,9 @@ if __name__ == '__main__':
     model = UNet(in_channels=4, depth=args.depth, p=args.dropout)
 
     # Loss criterion
-    criterion = nn.CrossEntropyLoss()
+    weight = torch.Tensor([0.15897597222222193, 0.8410240277777778])
+    weight = weight.to(device)
+    criterion = nn.NLLLoss(weight=weight)
 
     # Optimizer
     params = model.parameters()
@@ -155,7 +156,6 @@ if __name__ == '__main__':
         test_iou = checkpoint['test_iou']
 
     # Send to the GPU
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.to(device)
 
     # For each epoch...
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         scheduler.step()
 
         # For each mini-batch...
-        for data, labels in train_loader:
+        for batch, (data, labels) in enumerate(train_loader, 1):
             # Send to the GPU
             data = data.to(device)
             labels = labels.to(device)
@@ -191,6 +191,12 @@ if __name__ == '__main__':
             # Calculate gradients
             loss.backward()
 
+            # for name, param in model.named_parameters():
+            #     if param.requires_grad and param.grad is not None:
+            #         print(name)
+            #         print(torch.mean(torch.abs(param.grad)).item())
+            #         print(torch.max(torch.abs(param.grad)).item())
+
             # Update parameters
             optimizer.step()
 
@@ -210,7 +216,7 @@ if __name__ == '__main__':
             model.eval()
             running_test_iou = 0
             with torch.no_grad():
-                for data, labels in test_loader:
+                for batch, (data, labels) in enumerate(test_loader, 1):
                     # Send to the GPU
                     data = data.to(device)
                     labels = labels.to(device)
@@ -221,6 +227,16 @@ if __name__ == '__main__':
                     running_test_iou += metrics.jaccard_similarity_score(
                         labels.cpu().numpy().flatten(),
                         predictions.cpu().numpy().flatten())
+
+                    # Save results
+                    pred = predictions.cpu().numpy()[0]
+                    lab = labels.cpu().numpy()[0]
+                    print(np.amax(pred), np.amin(pred),
+                          np.amax(lab), np.amin(lab))
+                    scipy.misc.imsave(
+                        'checkpoints/pred_{}.png'.format(batch), pred)
+                    scipy.misc.imsave(
+                        'checkpoints/lab_{}.png'.format(batch), lab)
 
             test_iou.append(running_test_iou / len(test_loader))
 
