@@ -4,7 +4,6 @@ import os.path
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 
 from datasets.slam import SLAM
 from transforms import transforms

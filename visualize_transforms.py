@@ -14,12 +14,13 @@ def plot_data_target(data, target, transform, savefig=False):
     print('\nTransform:', transform)
 
     if isinstance(data, np.ndarray):
-        print('Data:', data.dtype, np.amin(data), np.amax(data))
-        print('Target:', target.dtype, np.amin(target), np.amax(target))
+        print('Data:', data.dtype, data.shape, np.amin(data), np.amax(data))
+        print('Target:', target.dtype, target.shape,
+              np.amin(target), np.amax(target))
     else:
-        print('Data:', data.dtype,
+        print('Data:', data.dtype, data.shape,
               torch.min(data).item(), torch.max(data).item())
-        print('Target:', target.dtype,
+        print('Target:', target.dtype, target.shape,
               torch.min(target).item(), torch.max(target).item())
 
     fig, axes = plt.subplots(2, 2)
@@ -62,7 +63,7 @@ def plot_data_target(data, target, transform, savefig=False):
 
 # Load image
 dataset = SLAM('data/SLAM')
-data, target = dataset[5]
+data, target = dataset[1]
 
 # Add grid lines (https://stackoverflow.com/a/20473192/5828163)
 dx, dy = 80, 80
@@ -77,15 +78,13 @@ plot_data_target(data, target, 'Original')
 transform_list = [
     transforms.RandomHorizontalFlip(p=1),
     transforms.RandomVerticalFlip(p=1),
+    transforms.MinMaxScaling(),
     transforms.RandomElasticDeformation(
-        alpha=400, sigma=10, alpha_affine=50),
+        alpha=200, sigma=10, alpha_affine=40),
     transforms.Pad(92, padding_mode='reflect'),
     transforms.RandomRotation(180),
     transforms.RandomCrop(572, 388),
     transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[106.224838055, 5.2348620833, 7.62163486111, 86.974367638],
-        std=[59.419128849, 7.1664727925, 7.462212191, 43.3211457393]),
 ]
 
 for transform in transform_list:
